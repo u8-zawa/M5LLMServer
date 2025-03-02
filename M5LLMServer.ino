@@ -173,7 +173,7 @@ void setup() {
     M5.Display.println("MDNS responder started");
   }
 
-  // サーバールートの設定
+  // ルーティング設定
   server.on("/", handleRoot);
   server.on("/ask", handleAsk);
   server.onNotFound(handleNotFound);
