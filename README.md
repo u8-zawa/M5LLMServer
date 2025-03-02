@@ -26,6 +26,7 @@ M5StackとLLMモジュールを使用して、HTTPリクエストでLLMと対話
    - USB経由で電源を供給します
 
 2. **設定ファイルの準備**
+
    ```cpp
    // config.cpp
    const char* ssid = "your-wifi-ssid";
@@ -34,6 +35,7 @@ M5StackとLLMモジュールを使用して、HTTPリクエストでLLMと対話
 
 3. **ピン設定の確認**
    使用するM5Stackモデルに応じて、適切なシリアル通信ピンを選択してください：
+
    ```cpp
    // Basic
    Serial2.begin(115200, SERIAL_8N1, 16, 17);
