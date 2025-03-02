@@ -17,7 +17,29 @@ M5ModuleLLM module_llm;
 String llm_work_id;
 String current_result;
 bool processing = false;
+bool timeout_occurred = false;  // タイムアウト発生フラグ
 const unsigned long CONNECTION_TIMEOUT = 30000;  // 30 seconds timeout
+TaskHandle_t timeout_task_handle = NULL;  // タイムアウトタスクのハンドル
+
+// タイムアウト監視タスク
+void timeoutCheckTask(void* parameter) {
+  unsigned long start_time = millis();
+  
+  while (processing) {
+    if (millis() - start_time > LLM_PROCESSING_TIMEOUT) {
+      // タイムアウト発生
+      timeout_occurred = true;
+      processing = false;
+      current_result = "Processing timeout. Please try with a simpler question.";
+      M5.Display.println("\nTimeout occurred!");
+      break;
+    }
+    delay(1000); // 1秒ごとにチェック
+  }
+  
+  timeout_task_handle = NULL;
+  vTaskDelete(NULL);
+}
 
 void handleRoot() {
   server.send(200, "text/plain", "M5Stack LLM Server");
@@ -45,19 +67,37 @@ void handleAsk() {
 
   // 処理中フラグを立てる
   processing = true;
+  timeout_occurred = false;
   current_result = "";
+
+  // タイムアウト監視タスクを開始
+  xTaskCreate(
+    timeoutCheckTask,
+    "timeoutTask",
+    4096,
+    NULL,
+    1,
+    &timeout_task_handle
+  );
 
   // LLMモジュールで処理
   module_llm.llm.inferenceAndWaitResult(llm_work_id, question.c_str(), [](String& result) {
-    M5.Display.printf("%s", result.c_str());
-    current_result = result;
+    if (!timeout_occurred) {  // タイムアウトが発生していない場合のみ結果を設定
+      M5.Display.printf("%s", result.c_str());
+      current_result = result;
+    }
   });
   M5.Display.println();
 
   // 処理完了
   processing = false;
 
-  // server.send(200, "text/plain", "handleAsk: complete");
+  // タイムアウトタスクが実行中の場合は削除
+  if (timeout_task_handle != NULL) {
+    vTaskDelete(timeout_task_handle);
+    timeout_task_handle = NULL;
+  }
+
   server.send(200, "text/plain", "handleAsk: " + current_result);
 }
 
