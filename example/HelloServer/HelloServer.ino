@@ -7,6 +7,7 @@
 WebServer server(80);
 
 const int led = 13;
+const unsigned long CONNECTION_TIMEOUT = 30000;  // 30 seconds timeout
 
 void handleRoot() {
   digitalWrite(led, 1);
@@ -39,16 +40,35 @@ void setup(void) {
   WiFi.begin(ssid, password);
   Serial.println("");
 
-  // Wait for connection
+  // Wait for connection with timeout
+  unsigned long startAttemptTime = millis();
+  bool connectionSuccess = false;
+
+  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - startAttemptTime > CONNECTION_TIMEOUT) {
+      Serial.println("\nWiFi connection timeout!");
+      break;
+    }
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    connectionSuccess = true;
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("Failed to connect to WiFi!");
+    Serial.println("Please check your WiFi credentials or network availability.");
+    // WiFiをオフにして電力消費を抑える
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    return; // セットアップを中止
+  }
 
   if (MDNS.begin("esp32")) {
     Serial.println("MDNS responder started");

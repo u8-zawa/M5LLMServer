@@ -107,12 +107,30 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
+  unsigned long startAttemptTime = millis();
+  bool connectionSuccess = false;
+
   while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - startAttemptTime > CONNECTION_TIMEOUT) {
+      M5.Display.println("\nWiFi connection timeout!");
+      break;
+    }
     delay(500);
     M5.Display.print(".");
   }
 
-  M5.Display.printf("\nConnected!\nIP: %s\n", WiFi.localIP().toString().c_str());
+  if (WiFi.status() == WL_CONNECTED) {
+    connectionSuccess = true;
+    M5.Display.printf("\nConnected!\nIP: %s\n", WiFi.localIP().toString().c_str());
+  } else {
+    M5.Display.println("\nFailed to connect to WiFi!");
+    M5.Display.println("Please check your WiFi credentials");
+    M5.Display.println("or network availability.");
+    // WiFiをオフにして電力消費を抑える
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    return; // セットアップを中止
+  }
 
   if (MDNS.begin("m5llm")) {
     M5.Display.println("MDNS responder started");
