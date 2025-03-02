@@ -17,14 +17,14 @@ M5ModuleLLM module_llm;
 String llm_work_id;
 String current_result;
 bool processing = false;
-bool timeout_occurred = false;  // タイムアウト発生フラグ
-const unsigned long CONNECTION_TIMEOUT = 30000;  // 30 seconds timeout
-TaskHandle_t timeout_task_handle = NULL;  // タイムアウトタスクのハンドル
+bool timeout_occurred = false;
+const unsigned long CONNECTION_TIMEOUT = 30000;
+TaskHandle_t timeout_task_handle = NULL;
 
 // タイムアウト監視タスク
 void timeoutCheckTask(void* parameter) {
   unsigned long start_time = millis();
-  
+
   while (processing) {
     if (millis() - start_time > LLM_PROCESSING_TIMEOUT) {
       // タイムアウト発生
@@ -32,11 +32,12 @@ void timeoutCheckTask(void* parameter) {
       processing = false;
       current_result = "Processing timeout. Please try with a simpler question.";
       M5.Display.println("\nTimeout occurred!");
+      server.send(408, "text/plain", "Processing timeout. Please try with a simpler question.");
       break;
     }
-    delay(1000); // 1秒ごとにチェック
+    delay(1000);
   }
-  
+
   timeout_task_handle = NULL;
   vTaskDelete(NULL);
 }
@@ -77,8 +78,7 @@ void handleAsk() {
     4096,
     NULL,
     1,
-    &timeout_task_handle
-  );
+    &timeout_task_handle);
 
   // LLMモジュールで処理
   module_llm.llm.inferenceAndWaitResult(llm_work_id, question.c_str(), [](String& result) {
@@ -169,7 +169,7 @@ void setup() {
     // WiFiをオフにして電力消費を抑える
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
-    return; // セットアップを中止
+    return;  // セットアップを中止
   }
 
   if (MDNS.begin("m5llm")) {
