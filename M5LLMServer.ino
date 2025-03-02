@@ -18,7 +18,6 @@ String llm_work_id;
 String current_result;
 bool processing = false;
 bool timeout_occurred = false;
-const unsigned long CONNECTION_TIMEOUT = 30000;
 TaskHandle_t timeout_task_handle = NULL;
 
 // タイムアウト監視タスク
