@@ -20,7 +20,6 @@ bool processing = false;
 bool timeout_occurred = false;
 TaskHandle_t timeout_task_handle = NULL;
 
-// タイムアウト監視タスク
 void timeoutCheckTask(void* parameter) {
   unsigned long start_time = millis();
 
@@ -88,7 +87,6 @@ void handleAsk() {
   });
   M5.Display.println();
 
-  // 処理完了
   processing = false;
 
   // タイムアウトタスクが実行中の場合は削除
@@ -120,7 +118,7 @@ void setup() {
   M5.Display.setTextSize(2);
   M5.Display.setTextScroll(true);
 
-  // Initialize Module LLM
+  // LLMモジュールの初期化
   // Serial2.begin(115200, SERIAL_8N1, 16, 17);  // Basic
   Serial2.begin(115200, SERIAL_8N1, 13, 14);  // Core2
   // Serial2.begin(115200, SERIAL_8N1, 18, 17);  // CoreS3
@@ -141,7 +139,7 @@ void setup() {
   llm_config.max_token_len = 1023;
   llm_work_id = module_llm.llm.setup(llm_config);
 
-  // Setup WiFi
+  // WiFiの設定
   M5.Display.printf(">> Connecting to WiFi..\n");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -175,7 +173,7 @@ void setup() {
     M5.Display.println("MDNS responder started");
   }
 
-  // Setup server routes
+  // サーバールートの設定
   server.on("/", handleRoot);
   server.on("/ask", handleAsk);
   server.onNotFound(handleNotFound);
